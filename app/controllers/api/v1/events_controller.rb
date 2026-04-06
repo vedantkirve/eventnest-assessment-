@@ -2,6 +2,7 @@ module Api
   module V1
     class EventsController < ApplicationController
       skip_before_action :authenticate_user!, only: [:index, :show]
+      before_action :authenticate_user_if_present!, only: [:index, :show]
 
       def index
         events = Event.published.upcoming
@@ -48,7 +49,7 @@ module Api
       def show
         event = Event.find(params[:id])
 
-        render json: {
+        response_data = {
           id: event.id,
           title: event.title,
           description: event.description,
@@ -73,6 +74,12 @@ module Api
             }
           }
         }
+
+        if current_user&.organizer? && event.user == current_user
+          response_data[:bookmark_count] = event.bookmarks.count
+        end
+
+        render json: response_data
       end
 
       def create
