@@ -58,3 +58,64 @@ curl -s "http://localhost:3000/api/v1/events?search=railsconf%27%20OR%20title%20
 
 **Expected:** 1 result — RailsConf India 2025 (same as above).
 **Actual:** All 3 published events are returned — the music festival and PostgreSQL workshop appear alongside RailsConf, despite having no relation to the search term. The injected SQL has overridden the search filter entirely.
+
+---
+
+## Demo 3 — Bookmark Feature (Task 3)
+
+We demonstrate the full bookmark flow using **Ananya Gupta** (`ananya@example.com`), an attendee from the seed data. The steps cover the happy path (create a bookmark), the duplicate rejection, and listing the user's bookmarks.
+
+**Pre-requisite:** Run the bookmark migration against the development database before starting.
+
+```bash
+docker compose exec web rails db:migrate
+```
+
+---
+
+### Step 1 — Login as Ananya (attendee) and grab the token
+
+```bash
+curl -s -X POST http://localhost:3000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"ananya@example.com","password":"password123"}'
+```
+
+Copy the `token` value from the response. Replace `ANANYA_TOKEN` with it in all steps below.
+
+---
+
+### Step 2 — Bookmark an event (happy path)
+
+Ananya bookmarks Event #1 — Mumbai Indie Music Festival.
+
+```bash
+curl -s -X POST http://localhost:3000/api/v1/events/1/bookmarks \
+  -H "Authorization: Bearer ANANYA_TOKEN"
+```
+
+**Expected:** `201 Created` with a bookmark ID and confirmation message.
+
+---
+
+### Step 3 — Attempt to bookmark the same event again (duplicate rejection)
+
+Sending the exact same request a second time hits the uniqueness constraint.
+
+```bash
+curl -s -X POST http://localhost:3000/api/v1/events/1/bookmarks \
+  -H "Authorization: Bearer ANANYA_TOKEN"
+```
+
+**Expected:** `422 Unprocessable Entity` with the error `"You have already bookmarked this event"`. No duplicate record is created.
+
+---
+
+### Step 4 — View Ananya's bookmark list
+
+```bash
+curl -s http://localhost:3000/api/v1/bookmarks \
+  -H "Authorization: Bearer ANANYA_TOKEN"
+```
+
+**Expected:** `200 OK` with a list containing only Ananya's bookmarked events — event title, city, start time, and when it was bookmarked.
