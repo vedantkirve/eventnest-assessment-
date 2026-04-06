@@ -2,6 +2,11 @@
 
 A Rails 7 API-only application for managing events, ticket sales, and orders.
 
+## Submission
+
+- **Repository:** https://github.com/vedantkirve/eventnest-assessment-
+- **Recording:** https://www.loom.com/share/63e2205d959b4a4d89b538a70f4ae581
+
 ## Quick Setup (Docker — Recommended)
 
 ```bash
@@ -102,6 +107,11 @@ curl -H "Authorization: Bearer <token>" http://localhost:3000/api/v1/events
 - `GET /api/v1/orders/:id` — Order details (authenticated)
 - `POST /api/v1/orders` — Create order (authenticated)
 - `POST /api/v1/orders/:id/cancel` — Cancel order (authenticated)
+
+### Bookmarks
+- `GET /api/v1/bookmarks` — List my bookmarks (authenticated)
+- `POST /api/v1/events/:event_id/bookmarks` — Bookmark an event (attendees only)
+- `DELETE /api/v1/events/:event_id/bookmarks/:id` — Remove a bookmark (authenticated)
 
 ## Tech Stack
 
