@@ -1,11 +1,34 @@
 # EventNest — Terminal Log
 
-**Purpose:** Live proof of critical vulnerabilities identified in REVIEW.md
-**Pre-requisite:** App running at `http://localhost:3000` with seed data loaded
+**Purpose:** Full session proof — setup, bug demonstrations, fix verification, and feature demo.
+**App URL:** `http://localhost:3000`
+**All passwords:** `password123`
 
 ---
 
-## Demo 1 — Broken Object-Level Authorization on Orders (Issue #1)
+## 1. Setup
+
+### Start the application
+
+```bash
+docker compose up
+```
+
+### Create, migrate, and seed the database
+
+```bash
+docker compose exec web rails db:create db:migrate db:seed
+```
+
+### Run the bookmark migration (Task 3)
+
+```bash
+docker compose exec web rails db:migrate
+```
+
+---
+
+## 2. Bug Proof — Issue #1: Broken Object-Level Authorization on Orders
 
 We are logging in as **Vikram Patel** (`vikram@example.com`), an attendee who has placed exactly one order in the system — a RailsConf India ticket worth ₹4,999. After authenticating as Vikram, we hit the orders endpoint. The expectation is that Vikram should only see his own order. What actually comes back is every order in the database — including orders belonging to Ananya and Sneha, users Vikram has no relation to.
 
@@ -31,7 +54,7 @@ curl -s http://localhost:3000/api/v1/orders \
 
 ---
 
-## Demo 2 — SQL Injection in Event Search (Issue #2)
+## 3. Bug Proof — Issue #2: SQL Injection in Event Search
 
 The events search endpoint builds its SQL query by directly interpolating the `search` parameter into a raw string — no parameterization, no sanitization. We demonstrate this in two steps: first a clean search to establish the baseline, then the same search with an injected payload to show the query is being manipulated.
 
@@ -61,17 +84,9 @@ curl -s "http://localhost:3000/api/v1/events?search=railsconf%27%20OR%20title%20
 
 ---
 
-## Demo 3 — Bookmark Feature (Task 3)
+## 4. Feature Demo — Bookmark Feature (Task 3)
 
 We demonstrate the full bookmark flow using **Ananya Gupta** (`ananya@example.com`), an attendee from the seed data. The steps cover the happy path (create a bookmark), the duplicate rejection, and listing the user's bookmarks.
-
-**Pre-requisite:** Run the bookmark migration against the development database before starting.
-
-```bash
-docker compose exec web rails db:migrate
-```
-
----
 
 ### Step 1 — Login as Ananya (attendee) and grab the token
 
@@ -82,8 +97,6 @@ curl -s -X POST http://localhost:3000/api/v1/auth/login \
 ```
 
 Copy the `token` value from the response. Replace `ANANYA_TOKEN` with it in all steps below.
-
----
 
 ### Step 2 — Bookmark an event (happy path)
 
@@ -96,8 +109,6 @@ curl -s -X POST http://localhost:3000/api/v1/events/1/bookmarks \
 
 **Expected:** `201 Created` with a bookmark ID and confirmation message.
 
----
-
 ### Step 3 — Attempt to bookmark the same event again (duplicate rejection)
 
 Sending the exact same request a second time hits the uniqueness constraint.
@@ -109,8 +120,6 @@ curl -s -X POST http://localhost:3000/api/v1/events/1/bookmarks \
 
 **Expected:** `422 Unprocessable Entity` with the error `"You have already bookmarked this event"`. No duplicate record is created.
 
----
-
 ### Step 4 — View Ananya's bookmark list
 
 ```bash
@@ -119,3 +128,13 @@ curl -s http://localhost:3000/api/v1/bookmarks \
 ```
 
 **Expected:** `200 OK` with a list containing only Ananya's bookmarked events — event title, city, start time, and when it was bookmarked.
+
+---
+
+## 5. Final Test Suite
+
+```bash
+docker compose build test && docker compose run --rm test bundle exec rspec --format documentation
+```
+
+**Result:** Finished in 1.84 seconds (files took 0.94889 seconds to load) 40 examples, 0 failures
